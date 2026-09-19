@@ -7,7 +7,7 @@
 [![ROC-AUC](https://img.shields.io/badge/ROC--AUC-0.8422-emerald?style=flat)](https://github.com/SambhavRaj18/telco-churn-ml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/SambhavRaj18/telco-churn-ml)
 
-> An end-to-end production Machine Learning pipeline, REST API, and interactive decision-support interface for predicting customer churn risk on the IBM Telco Customer Churn dataset.
+> An end-to-end machine learning application, containerized inference API, and interactive decision-support dashboard for predicting customer churn risk on the IBM Telco Customer Churn dataset.
 
 ---
 
@@ -21,18 +21,18 @@
 - [Exploratory Data Analysis (EDA)](#-exploratory-data-analysis-eda)
 - [Correlation Analysis](#-correlation-analysis)
 - [Feature Preparation & Preprocessing Pipeline](#-feature-preparation--preprocessing-pipeline)
-- [Model Training & Baseline Comparison](#-model-training--baseline-comparison)
+- [Model Training & Comparison](#-model-training--comparison)
 - [Cross-Validation & Hyperparameter Tuning](#-cross-validation--hyperparameter-tuning)
 - [ROC-AUC & Discrimination Analysis](#-roc-auc--discrimination-analysis)
 - [Probability Threshold Optimization (Recall Tuning)](#-probability-threshold-optimization-recall-tuning)
 - [Final Test Performance](#-final-test-performance)
-- [Confusion Matrix & Business Interpretation](#-confusion-matrix--business-interpretation)
+- [Confusion Matrix & Operational Interpretation](#-confusion-matrix--operational-interpretation)
 - [Serialized Pipeline Creation](#-serialized-pipeline-creation)
 - [Flask REST API Endpoint](#-flask-rest-api-endpoint)
 - [TelcoShield AI Frontend Dashboard](#-telcoshield-ai-frontend-dashboard)
-- [Docker Containerization & Engineering Notes](#-docker-containerization--engineering-notes)
+- [Docker Containerization & Troubleshooting History](#-docker-containerization--troubleshooting-history)
 - [End-to-End Verification](#-end-to-end-verification)
-- [Project Directory Structure](#-project-directory-structure)
+- [Repository Structure](#-repository-structure)
 - [How to Run (Local & Docker)](#-how-to-run-local--docker)
 - [Key Engineering & ML Concepts](#-key-engineering--ml-concepts)
 - [Project Limitations](#-project-limitations)
@@ -43,14 +43,14 @@
 
 ## 🎯 Project Overview
 
-Customer churn refers to the loss of subscribers or customers who discontinue their service contracts. In telecommunications, acquiring new customers costs significantly more than retaining existing ones; accurate early identification of churn risk enables retention teams to proactively intervene with tailored offers.
+Customer churn refers to subscribers discontinuing their service contracts with a telecommunications provider. Anticipating which customers are at risk of churning allows organizations to engage in proactive retention outreach.
 
 ### Problem Formulation
 - **ML Task:** Supervised Binary Classification.
 - **Target Variable ($y$):**
   - `0` $\rightarrow$ **No Churn** (Customer retained)
-  - `1` $\rightarrow$ **Churn** (Customer left within the last month)
-- **Objective:** Train an ensemble model optimized for high churn recall without excessive false alarm degradation, package the model and preprocessing into a single serialized artifact, and serve inference through a validated Flask REST API and containerized web dashboard.
+  - `1` $\rightarrow$ **Churn** (Customer departed within the observation window)
+- **Objective:** Build an end-to-end machine learning pipeline that preprocesses customer data, trains an ensemble classifier with tuned probability thresholds prioritizing churn recall, packages the pipeline into a single serialized artifact, and serves predictions via a validated Flask API and containerized web dashboard.
 
 ---
 
@@ -59,11 +59,11 @@ Customer churn refers to the loss of subscribers or customers who discontinue th
 | Domain | Technologies & Libraries | Purpose |
 | :--- | :--- | :--- |
 | **Language & Core** | Python 3.10 | Core programming runtime |
-| **Data Science & ML** | Pandas, NumPy, Scikit-Learn 1.6.0, Joblib | Data manipulation, feature engineering, pipeline serialization, model evaluation |
+| **Data Science & ML** | Pandas, NumPy, Scikit-Learn 1.6.0, Joblib | Data processing, feature transformation, model training, evaluation, and artifact serialization |
 | **Data Visualization** | Matplotlib | Exploratory data analysis and distribution plotting |
-| **Backend & API** | Flask | RESTful prediction API, payload validation, template rendering |
-| **Frontend & UI** | HTML5, Vanilla JavaScript, Tailwind CSS, FontAwesome | Reactive web UI, dynamic form dependencies, animated risk gauge |
-| **DevOps & Container** | Docker, Git, GitHub | Application containerization, environment isolation, version control |
+| **Backend & API** | Flask | HTTP request routing, input validation, template serving, and JSON inference endpoint |
+| **Frontend & UI** | HTML5, Vanilla JavaScript, Tailwind CSS (CDN), FontAwesome (CDN) | Interactive dashboard, dynamic form dependency controls, animated SVG probability gauge |
+| **Container & Version Control** | Docker, Git, GitHub | Application containerization, environment reproducibility, source control |
 
 ---
 
@@ -84,14 +84,14 @@ Customer churn refers to the loss of subscribers or customers who discontinue th
 └──────────────────────────────────────┬─────────────────────────────────────────┘
                                        │
 ┌──────────────────────────────────────▼─────────────────────────────────────────┐
-│                        2. PRODUCTION SERVING & CONTAINER                       │
+│                        2. INFERENCE SERVING & CONTAINER                        │
 │                                                                                │
-│  TelcoShield AI Dashboard (HTML5 / Tailwind / JS)                              │
+│  TelcoShield AI Dashboard (HTML5 / Tailwind CSS / Vanilla JS)                  │
 │         │                                                                      │
 │         ▼  (AJAX JSON Payload: 19 Features)                                    │
-│  Flask Backend (app.py @ POST /predict)                                        │
-│         ├── Request Validation (Keys, Numeric Types, Categorical Enums)        │
-│         ├── Model Inference (final_pipeline.pkl)                               │
+│  Flask Application (app.py @ POST /predict)                                    │
+│         ├── Input Validation (19 Keys, Numeric Types, Categorical Values)      │
+│         ├── Pipeline Inference (final_pipeline.pkl)                            │
 │         └── Threshold Logic: p >= 0.33 -> Churn | p < 0.33 -> No Churn         │
 │                                                                                │
 │  Docker Container (python:3.10-slim @ 0.0.0.0:5000)                            │
@@ -105,32 +105,32 @@ Customer churn refers to the loss of subscribers or customers who discontinue th
 The project utilizes the **IBM Telco Customer Churn** dataset.
 
 - **Total Records:** 7,043 customer accounts
-- **Raw Features:** 21 columns (1 ID, 19 input features, 1 target)
+- **Raw Features:** 21 columns (1 ID, 19 model inputs, 1 target)
 - **Target Distribution:**
   - `No Churn`: **5,174** (73.46%)
   - `Churn`: **1,869** (26.54%)
-  - *Class Imbalance Ratio:* $\approx 2.77 : 1$
+  - *Class Ratio:* $\approx 2.77 : 1$
 
-### Feature Breakdown
+### Feature Categories
 
 | Category | Features |
 | :--- | :--- |
 | **Demographics** | `gender`, `SeniorCitizen`, `Partner`, `Dependents` |
-| **Connectivity & Phone** | `tenure`, `PhoneService`, `MultipleLines`, `InternetService` |
+| **Account & Connectivity** | `tenure`, `PhoneService`, `MultipleLines`, `InternetService` |
 | **Add-on Services** | `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies` |
 | **Contract & Billing** | `Contract`, `PaperlessBilling`, `PaymentMethod`, `MonthlyCharges`, `TotalCharges` |
 
-> **Repository Note:** The raw CSV file (`WA_Fn-UseC_-Telco-Customer-Churn.csv`) is excluded from version control via `.gitignore`. Place the dataset in `data/` or `telco-customer-churn/` for local notebook reproduction.
+> **Dataset Storage Note:** The raw CSV file (`WA_Fn-UseC_-Telco-Customer-Churn.csv`) is excluded from this repository via `.gitignore` and is not packaged inside the Docker image. For local training or notebook execution, place the dataset locally under `telco-customer-churn/` or `data/`.
 
 ---
 
 ## 🧹 Data Cleaning & Type Standardization
 
-Inspection of the raw dataset revealed a critical data type issue in `TotalCharges`:
+Inspection of the raw dataset identified a data type inconsistency in `TotalCharges`:
 
-1. **Object Storage:** `TotalCharges` was loaded as an `object` (string) column rather than a floating-point numeric.
-2. **Hidden Whitespace Values:** 11 rows contained blank whitespace strings (`" "`), causing direct numeric conversion to fail.
-3. **Zero-Tenure Root Cause:** Cross-referencing these 11 rows revealed that every customer with a missing `TotalCharges` had `tenure == 0` (brand new accounts prior to their first monthly billing cycle).
+1. **Object Storage:** `TotalCharges` was loaded as an `object` (string) column rather than a floating-point number.
+2. **Blank Whitespace Values:** 11 rows contained blank whitespace strings (`" "`).
+3. **Zero-Tenure Alignment:** Cross-referencing these 11 rows showed that each customer had `tenure == 0` (new accounts that had not yet completed a monthly billing cycle).
 
 ### Cleaning Implementation
 
@@ -143,56 +143,56 @@ df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df["TotalCharges"] = df["TotalCharges"].fillna(0)
 ```
 
-After cleaning, `TotalCharges` is fully continuous with zero nulls and verified data integrity.
+After cleaning, `TotalCharges` is fully numeric with zero missing values.
 
 ---
 
 ## 🔍 Exploratory Data Analysis (EDA)
 
-EDA was performed across numerical distributions and categorical crosstabs to identify baseline associations with customer churn.
+Exploratory data analysis was conducted to examine numerical distributions and categorical crosstabs against churn outcomes.
 
 ### Numerical Distribution Summary
 
-| Numerical Feature | No Churn Group | Churn Group | Observed Pattern |
+| Numerical Feature | No Churn Group | Churn Group | Observed Association |
 | :--- | :--- | :--- | :--- |
-| **`tenure`** | Median $\approx 38$ months | Median $\approx 10$ months | Churners are heavily concentrated in early account lifecycle stages. |
-| **`MonthlyCharges`** | Median $\approx \$64.40$ | Median $\approx \$79.65$ | Churners exhibit higher monthly bill amounts on average. |
-| **`TotalCharges`** | Median $\approx \$1,683.60$ | Median $\approx \$703.55$ | Lower overall cumulative spend due to truncated tenure. |
+| **`tenure`** | Median $\approx 38$ months | Median $\approx 10$ months | Churners in the dataset are concentrated in lower tenure ranges. |
+| **`MonthlyCharges`** | Median $\approx \$64.40$ | Median $\approx \$79.65$ | Churners exhibit higher median monthly charges. |
+| **`TotalCharges`** | Median $\approx \$1,683.60$ | Median $\approx \$703.55$ | Churners have lower cumulative charges due to shorter tenure. |
 
-### Categorical Churn Rate Observations
+### Categorical Churn Rate Summary
 
-| Category | High Churn Rate Segment | Lower Churn Rate Segment |
+| Category | Higher Churn Segment | Lower Churn Segment |
 | :--- | :--- | :--- |
 | **Contract Type** | Month-to-Month ($\approx 42.7\%$) | Two-Year ($\approx 2.8\%$), One-Year ($\approx 11.3\%$) |
 | **Payment Method** | Electronic Check ($\approx 45.3\%$) | Credit Card ($\approx 15.2\%$), Bank Transfer ($\approx 16.7\%$) |
 | **Internet Service** | Fiber Optic ($\approx 41.9\%$) | DSL ($\approx 19.0\%$), No Internet ($\approx 7.4\%$) |
-| **Support Add-ons** | No Online Security ($\approx 41.8\%$) / No Tech Support ($\approx 41.6\%$) | Active Online Security ($\approx 14.6\%$) / Tech Support ($\approx 15.2\%$) |
+| **Support Subscriptions** | No Online Security ($\approx 41.8\%$) / No Tech Support ($\approx 41.6\%$) | Active Online Security ($\approx 14.6\%$) / Tech Support ($\approx 15.2\%$) |
 | **Demographics** | Senior Citizens ($\approx 41.7\%$) | Non-Seniors ($\approx 23.6\%$) |
 
-> **Analytical Discipline:** These patterns represent observed statistical correlations in historical data and must not be conflated with direct causality.
+> **Interpretation Note:** These patterns describe historical associations within this specific dataset and do not imply direct causality.
 
 ---
 
 ## 📈 Correlation Analysis
 
-Pearson correlation coefficients were computed across numerical attributes to measure linear co-dependencies:
+Pearson correlation coefficients were calculated across numerical features:
 
-| Feature Pair | Pearson Correlation ($r$) | Domain Interpretation |
+| Feature Pair | Pearson Correlation ($r$) | Description |
 | :--- | :---: | :--- |
-| **`tenure` – `TotalCharges`** | **0.8262** | Strong positive correlation: cumulative bill increases linearly with tenure. |
-| **`MonthlyCharges` – `TotalCharges`** | **0.6512** | Moderate-to-strong positive correlation. |
-| **`tenure` – `MonthlyCharges`** | **0.2479** | Weak positive correlation: tenure is not dictated by monthly charge tier. |
+| **`tenure` – `TotalCharges`** | **0.8262** | Strong positive linear correlation as cumulative charges accumulate over tenure. |
+| **`MonthlyCharges` – `TotalCharges`** | **0.6512** | Moderate-to-strong positive linear correlation. |
+| **`tenure` – `MonthlyCharges`** | **0.2479** | Weak positive linear correlation. |
 
 ---
 
 ## ⚙️ Feature Preparation & Preprocessing Pipeline
 
 ### 1. Identifier Removal & Target Encoding
-- `customerID` was dropped as it carries zero generalizable predictive signal.
-- Binary target mapping: `y = df["Churn"].map({"No": 0, "Yes": 1})`.
+- `customerID` was removed because it is a unique identifier with no generalizable predictive value.
+- Target mapping: `y = df["Churn"].map({"No": 0, "Yes": 1})`.
 
 ### 2. Stratified Train-Test Split
-An 80/20 train-test split was performed using `stratify=y` to preserve exact class ratios across partitions:
+An 80/20 train-test split was performed using `stratify=y` to preserve class proportions:
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -207,7 +207,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 - **Training Set:** 5,634 samples (4,139 No Churn / 1,495 Churn)
 - **Test Set:** 1,409 samples (1,035 No Churn / 374 Churn)
 
-### 3. ColumnTransformer Preprocessing Pipeline
+### 3. ColumnTransformer Pipeline
 
 ```python
 from sklearn.compose import ColumnTransformer
@@ -229,29 +229,28 @@ preprocessor = ColumnTransformer(
 )
 ```
 
-- **`StandardScaler`**: Scales continuous variables to zero mean and unit variance.
-- **`OneHotEncoder(handle_unknown="ignore")`**: Converts categorical levels to binary indicator columns while preventing runtime failure on unseen categories during inference.
+- **`StandardScaler`**: Centers and scales continuous variables to zero mean and unit variance.
+- **`OneHotEncoder(handle_unknown="ignore")`**: Converts categorical variables into binary indicator columns and ignores unseen categories during inference.
 
 ---
 
-## 🤖 Model Training & Baseline Comparison
+## 🤖 Model Training & Comparison
 
-Multiple model architectures were trained and compared on the standardized training data:
+The following models were trained and evaluated on the dataset:
 
-| Model Architecture | Validation / Test Accuracy | ROC-AUC | Engineering Assessment |
+| Model | Test Accuracy | ROC-AUC | Description |
 | :--- | :---: | :---: | :--- |
-| **Logistic Regression** | **80.55%** | **0.8421** | Strong linear baseline with stable discrimination. |
-| **Baseline Decision Tree** | 72.11% | 0.6477 | Severe unconstrained tree overfitting; low generalizability. |
-| **Depth-Limited Decision Tree** | 77.22% | 0.7810 | Improved regularization via depth pruning. |
-| **Tuned Random Forest** | **76.86%** *(at 0.33 threshold)* | **0.8422** | **Selected Model:** Optimal probability discrimination and robust ensemble variance reduction. |
+| **Logistic Regression** | **80.55%** | **0.8421** | Linear classification baseline. |
+| **Baseline Decision Tree** | 72.11% | 0.6477 | Unconstrained single tree exhibiting training set overfitting. |
+| **Tuned Random Forest** | **76.86%** *(at threshold 0.33)* | **0.8422** | **Selected Model:** 500-tree ensemble with tuned depth and split parameters. |
 
 ---
 
 ## 🔬 Cross-Validation & Hyperparameter Tuning
 
-Hyperparameter tuning for the Random Forest classifier was conducted using **5-Fold Stratified Cross-Validation** strictly on the training set (`X_train`, `y_train`):
+Hyperparameter tuning for the Random Forest model was conducted using **5-Fold Stratified Cross-Validation** on the training data (`X_train`, `y_train`):
 
-### Final Tuned Hyperparameters
+### Final Random Forest Configuration
 
 ```python
 from sklearn.ensemble import RandomForestClassifier
@@ -266,10 +265,10 @@ rf_tuned = RandomForestClassifier(
 )
 ```
 
-- **`n_estimators=500`**: High ensemble averaging stabilizes probability variance.
-- **`max_depth=7`**: Restricts maximum tree depth to prevent leaf overfitting.
-- **`min_samples_leaf=2` & `min_samples_split=5`**: Enforces minimum node density for leaf splits.
-- **`max_features="sqrt"`**: Subsamples feature space per split for tree de-correlation.
+- **`n_estimators=500`**: Number of trees in the ensemble.
+- **`max_depth=7`**: Limits individual tree depth to reduce leaf-level variance.
+- **`min_samples_split=5` & `min_samples_leaf=2`**: Constrains node splitting to maintain minimum sample thresholds.
+- **`max_features="sqrt"`**: Subsamples features per split to de-correlate individual trees.
 
 ---
 
@@ -277,40 +276,21 @@ rf_tuned = RandomForestClassifier(
 
 The tuned Random Forest model achieved a test-set **ROC-AUC of 0.8422 (84.22%)**.
 
-```text
-                      ROC-AUC Concept
-1.0 ┌──────────────────────────────────────────────┐
-    │                                    .---------│ (AUC = 0.8422)
-    │                             .-----'          │
-TPR │                       .----'                 │
-    │                 .----'                       │
-    │           .----'                             │
-    │     .----'                                   │
-0.0 └──────────────────────────────────────────────┘
-    0.0                     FPR                  1.0
-```
-
-### Technical Distinction
-- **ROC-AUC (Receiver Operating Characteristic - Area Under Curve)** measures the probability that the model ranks a randomly chosen positive instance (churner) higher than a randomly chosen negative instance (non-churner) across all possible thresholds ($0.0 \le p \le 1.0$).
-- ROC-AUC is **threshold-independent** and is not equivalent to accuracy or probability calibration.
+### Technical Meaning
+- **ROC-AUC (Receiver Operating Characteristic - Area Under Curve)** evaluates the model's ability to rank churning customers above non-churning customers across all possible decision thresholds ($0.0 \le p \le 1.0$).
+- ROC-AUC is **threshold-independent** and should not be confused with accuracy or probability calibration.
 
 ---
 
 ## ⚖️ Probability Threshold Optimization (Recall Tuning)
 
-Standard classification algorithms use an arbitrary default decision threshold of $p = 0.50$. In retention analytics, this default is often misaligned with business economics:
+Standard binary classifiers use a conventional default threshold of $p = 0.50$. For this project, threshold behavior was analyzed using out-of-fold predictions on the training set, evaluating the trade-off between precision, recall, and F1 score.
 
-$$\text{Cost}(\text{False Negative}) \gg \text{Cost}(\text{False Positive})$$
-
-- **False Negative (Missed Churner):** Customer leaves undetected; entire customer lifetime value (LTV) is lost.
-- **False Positive (False Alarm):** A loyal customer receives a proactive discount or loyalty call; minor operational outreach cost.
-
-### Threshold Selection Process
-Using out-of-fold cross-validation probabilities, precision-recall trade-offs were evaluated. Lowering the decision threshold to **`0.33`** captures significantly more churners:
+Because the project objective prioritized identifying a higher proportion of potential churners, the operating classification threshold was adjusted to **`0.33`**:
 
 $$\text{Decision Rule: } \hat{y} = \begin{cases} \text{"Churn"}, & \text{if } P(y=1 \mid \mathbf{x}) \ge 0.33 \\ \text{"No Churn"}, & \text{if } P(y=1 \mid \mathbf{x}) < 0.33 \end{cases}$$
 
-> **Operating Parameter Note:** The `0.33` threshold is a project-specific operating threshold chosen to prioritize churn recall. It is not an arbitrary industry constant.
+> **Project Parameter Note:** The `0.33` threshold is an operating parameter selected for this project's stated recall-focused objective. It is not a mathematically universal or industry-standard threshold.
 
 ---
 
@@ -318,17 +298,19 @@ $$\text{Decision Rule: } \hat{y} = \begin{cases} \text{"Churn"}, & \text{if } P(
 
 Evaluated on the locked test set ($N = 1,409$) with threshold $p = 0.33$:
 
-| Metric | Score | Nature of Metric | Business Meaning |
+| Metric | Score | Metric Type | Description |
 | :--- | :---: | :--- | :--- |
-| **Accuracy** | **76.86%** | Threshold-dependent | Overall correct classification rate across both classes. |
-| **Precision** | **54.71%** | Threshold-dependent | When flagged as churn, 54.71% of customers were actual churners. |
-| **Recall** | **74.60%** | Threshold-dependent | **74.60% of all actual churners were successfully detected.** |
+| **Accuracy** | **76.86%** | Threshold-dependent | Overall correct classification rate. |
+| **Precision** | **54.71%** | Threshold-dependent | Proportion of predicted churners that actually churned. |
+| **Recall** | **74.60%** | Threshold-dependent | **Proportion of actual churners successfully identified.** |
 | **F1 Score** | **63.12%** | Threshold-dependent | Harmonic mean of Precision and Recall. |
-| **ROC-AUC** | **84.22%** | Threshold-independent | Global ranking and class separation capability. |
+| **ROC-AUC** | **84.22%** | Threshold-independent | Global ranking and class separation metric. |
 
 ---
 
-## 🧩 Confusion Matrix & Business Interpretation
+## 🧩 Confusion Matrix & Operational Interpretation
+
+At the `0.33` threshold on the test set ($N = 1,409$):
 
 ```text
                        Actual Positive (Churn)     Actual Negative (No Churn)
@@ -336,16 +318,16 @@ Predicted Churn (p ≥ 0.33)       279 [TP]                     231 [FP]
 Predicted No Churn (p < 0.33)     95 [FN]                     804 [TN]
 ```
 
-- **True Positives (TP = 279):** 279 churning customers correctly identified for retention outreach.
-- **True Negatives (TN = 804):** 804 loyal customers correctly classified with zero retention overhead.
-- **False Positives (FP = 231):** 231 non-churning customers flagged; minimal cost of retention offer.
-- **False Negatives (FN = 95):** 95 churning customers missed out of 374 total churners (substantially reduced from $>180$ misses at a 0.50 threshold).
+- **True Positives (TP = 279):** Churning customers correctly identified for potential retention action.
+- **True Negatives (TN = 804):** Non-churning customers correctly classified.
+- **False Positives (FP = 231):** Non-churning customers flagged for potential retention outreach.
+- **False Negatives (FN = 95):** Churning customers that were not flagged by the model.
 
 ---
 
 ## 📦 Serialized Pipeline Creation
 
-To eliminate training-serving skew, the fitted `preprocessor` and `rf_tuned` estimator were bundled into a single Scikit-Learn `Pipeline`:
+The preprocessing steps and tuned Random Forest model were assembled into a single Scikit-Learn `Pipeline`:
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -360,21 +342,20 @@ final_pipeline = Pipeline([
 joblib.dump(final_pipeline, "final_pipeline.pkl")
 ```
 
-The exported file `final_pipeline.pkl` encapsulates scaling parameters, one-hot category mappings, and all 500 decision trees for atomic single-line inference.
+The exported file `final_pipeline.pkl` encapsulates feature scaling, one-hot encodings, and ensemble trees in a single artifact for deployment.
 
 ---
 
 ## 🔌 Flask REST API Endpoint
 
-The backend is exposed via Flask in [`app.py`](file:///d:/udemy/ML1/app.py).
+The inference service is implemented in [`app.py`](file:///d:/udemy/ML1/app.py).
 
-### API Specification
-
-- **Health Check / UI Route:** `GET /` $\rightarrow$ Renders `templates/index.html`
+### Endpoints
+- **UI Route:** `GET /` $\rightarrow$ Serves `templates/index.html`
 - **Inference Route:** `POST /predict`
-- **Request Content-Type:** `application/json`
+- **Content-Type:** `application/json`
 
-### Request Payload (19 Required Features)
+### Example Request Body (19 Features)
 
 ```json
 {
@@ -400,58 +381,41 @@ The backend is exposed via Flask in [`app.py`](file:///d:/udemy/ML1/app.py).
 }
 ```
 
-### Successful Response Payload (`200 OK`)
+### Example Response Body (`200 OK`)
 
 ```json
 {
-  "churn_probability": 0.7360412891045231,
+  "churn_probability": 0.7396,
   "prediction": "Churn"
 }
 ```
 
-### Robust Backend Validation
-- **400 Bad Request:** Triggered on missing JSON body, missing keys, invalid numeric ranges/types, or categorical strings not matching fitted `OneHotEncoder` categories.
-- **500 Internal Server Error:** Safely caught inside `try/except` blocks returning sanitized JSON error messages without leaking Python tracebacks.
+### Validation Handling
+- **400 Bad Request:** Returned when required keys are missing, numerical values are invalid or negative, or categorical strings do not match expected training categories.
+- **500 Internal Server Error:** Managed with defensive exception handling returning JSON error descriptions.
 
 ---
 
 ## 🖥️ TelcoShield AI Frontend Dashboard
 
-The frontend in [`templates/index.html`](file:///d:/udemy/ML1/templates/index.html) is built with modern HTML5, Tailwind CSS, and Vanilla JavaScript.
+The frontend in [`templates/index.html`](file:///d:/udemy/ML1/templates/index.html) is built with HTML5, Vanilla JavaScript, Tailwind CSS (via CDN), and FontAwesome icons (via CDN).
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│ TelcoShield AI • Customer Churn Prediction Engine                      │
-├───────────────────────────────────┬────────────────────────────────────┤
-│ 1. Demographics                   │ PREDICTION OUTCOME                 │
-│    Gender, Senior, Partner...     │                                    │
-│ 2. Phone Services                 │       ╭─────────────╮              │
-│    PhoneService, MultipleLines... │      │    73.60%   │ (SVG Gauge)   │
-│ 3. Internet & Add-on Services     │       ╰─────────────╯              │
-│    InternetService, Security...   │  [⚠️ CHURN RISK DETECTED]          │
-│ 4. Contract & Financials          │                                    │
-│    Contract, Payment, Charges...  │  Threshold: p ≥ 0.33               │
-│                                   │                                    │
-│ [ RUN CHURN RISK ANALYSIS ]       │  ► Technical Details (API Payload) │
-└───────────────────────────────────┴────────────────────────────────────┘
-```
-
-### Frontend Engineering Highlights
-1. **Dynamic Parent-Child Dependency Logic:**
-   - `PhoneService = "No"` $\rightarrow$ Automatically locks `MultipleLines` to `"No phone service"` and disables the input.
-   - `InternetService = "No"` $\rightarrow$ Automatically locks all 6 add-on services to `"No internet service"` and disables them.
-   - Dynamic option rebuilding guarantees zero stale invalid values on repeated switching.
-2. **Strict Client-Side Validation:** Explicit string trim checks prevent `Number("") === 0` bugs; enforces integer `tenure` $\in [0, 72]$ and non-negative charges.
-3. **Continuous Risk Visualization:** SVG circular progress meter animated to the exact continuous churn probability percentage.
-4. **Stale Prediction Protection:** Modifying any form parameter after inference immediately displays an `OUTDATED` badge and warning banner.
-5. **Sample Profiles:** 1-click loading for standard test vectors (`Sample Profile A`, `Sample Profile B`, `Sample Profile C`).
-6. **No Pseudo-AI Inventions:** Displays verified probability and threshold rules without hardcoded or fabricated feature attributions.
+### Frontend Features
+1. **Dynamic Service Dependencies:**
+   - Selecting `PhoneService = "No"` locks `MultipleLines` to `"No phone service"` and disables the input.
+   - Selecting `InternetService = "No"` locks all 6 add-on services to `"No internet service"` and disables them.
+   - Switching options re-enables applicable dropdown choices without leaving invalid combinations.
+2. **Client-Side Validation:** Validates that `tenure` is an integer between 0 and 72, charges are non-negative, and no required fields are blank prior to submission.
+3. **Continuous Probability Gauge:** Animated SVG circular progress meter representing the exact continuous churn probability percentage.
+4. **Stale Prediction Flagging:** If any input is modified after inference, an `OUTDATED` badge and banner notify the user that results reflect previous inputs.
+5. **Sample Profiles:** Includes sample profiles (`Sample Profile A`, `Sample Profile B`, `Sample Profile C`) with valid configurations for demonstration.
+6. **Technical Inspection Accordion:** Expandable section displaying the raw JSON payload and response.
 
 ---
 
-## 🐳 Docker Containerization & Engineering Notes
+## 🐳 Docker Containerization & Troubleshooting History
 
-The application is containerized with Docker for repeatable, environment-agnostic deployment.
+The application is containerized using Docker.
 
 ### `Dockerfile`
 
@@ -481,52 +445,46 @@ scikit-learn==1.6.0
 joblib
 ```
 
-### Engineering & Troubleshooting Notes
+### Engineering & Troubleshooting History
 
-| Challenge Encountered | Root Cause | Engineering Solution |
-| :--- | :--- | :--- |
-| **Unpickling Attribute Error** (`_RemainderColsList`) | Version drift between serialized pipeline Scikit-Learn version and container environment. | Pinned `scikit-learn==1.6.0` explicitly in `requirements.txt`. |
-| **Container Port Inaccessibility** | Flask by default binds to `127.0.0.1` (loopback internal to container). | Updated Flask entrypoint to `app.run(host="0.0.0.0", port=5000, debug=False)`. |
-| **Docker Build Cache Retention** | Docker reused stale layer cache when updating dependency files. | Built image with `docker build --no-cache -t telco-churn-app .`. |
+1. **Initial Missing Dependencies:** `requirements.txt` was initially empty, causing missing library errors during startup (`joblib` / `scikit-learn`). Added all runtime dependencies to `requirements.txt`.
+2. **Scikit-Learn Version Compatibility:** Unpickling the model artifact in a container with a newer Scikit-Learn version (1.7.x) caused an `AttributeError` (`_RemainderColsList`). Explicitly pinning `scikit-learn==1.6.0` to match the serialization environment resolved the error.
+3. **Container Host Binding:** Flask defaults to listening on `127.0.0.1`, which is accessible only inside the container network namespace. Updated `app.py` to `app.run(host="0.0.0.0", port=5000, debug=False)` to enable external port forwarding.
+4. **Build Cache Invalidation:** When updating dependencies, Docker layer caching retained older environments. Rebuilt using `docker build --no-cache -t telco-churn-app .` to ensure clean package installation.
 
 ---
 
 ## 🧪 End-to-End Verification
 
-The complete flow was verified across both local and containerized environments:
+The complete application flow was verified across both local Flask execution and containerized Docker execution:
 
-$$\text{Browser Form} \longrightarrow \text{Docker Port 5000:5000} \longrightarrow \text{Flask API} \longrightarrow \text{ColumnTransformer} \longrightarrow \text{RandomForest} \longrightarrow \text{JSON Response}$$
+$$\text{Browser Input} \longrightarrow \text{Port 5000 Mapping} \longrightarrow \text{Flask Route} \longrightarrow \text{ColumnTransformer} \longrightarrow \text{Random Forest} \longrightarrow \text{JSON Response} \longrightarrow \text{UI Display}$$
 
-- **Sample Profile A (Month-to-month, Fiber optic, Electronic check):**
-  - Result: `p = 0.7360 (73.60%)` $\rightarrow$ `Prediction: Churn`
-- **Sample Profile B (Two year, DSL, Auto-card):**
-  - Result: `p = 0.0241 (2.41%)` $\rightarrow$ `Prediction: No Churn`
-- **Sample Profile C (Phone-only, No internet):**
-  - Result: `p = 0.0457 (4.57%)` $\rightarrow$ `Prediction: No Churn`
+### Verified Consistency Check
+- **Customer Record:** `9305-CDSKC` (Actual churn: `Yes`)
+- **Local Flask Probability:** **73.96%** (`Prediction: Churn`)
+- **Docker Container Probability:** **73.96%** (`Prediction: Churn`)
 
-Both local execution and containerized execution produce bit-for-bit identical inference probabilities.
+Both local and Docker execution yielded identical displayed prediction probabilities of **73.96%** for the verified test record.
 
 ---
 
-## 📂 Project Directory Structure
+## 📂 Repository Structure
 
 ```text
 telco-churn-ml/
 │
-├── app.py                     # Flask REST API backend & inference routes
+├── app.py                     # Flask inference API & route definitions
 ├── final_pipeline.pkl         # Serialized Scikit-Learn pipeline artifact
-├── notebook.ipynb             # Jupyter notebook for data cleaning, EDA, tuning
-├── requirements.txt           # Pinned production runtime dependencies
+├── notebook.ipynb             # Jupyter notebook containing data analysis & modeling
+├── requirements.txt           # Python package dependencies (pinned versions)
 ├── Dockerfile                 # Docker container build specification
-├── .dockerignore              # Excluded files during Docker build context
-├── .gitignore                 # Excluded files for Git version control
-├── README.md                  # Comprehensive project documentation
-│
-├── telco-customer-churn/      # Local dataset directory (gitignored)
-│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+├── .dockerignore              # Files excluded from Docker build context
+├── .gitignore                 # Files excluded from Git version control
+├── README.md                  # Project documentation
 │
 └── templates/
-    └── index.html             # Production TelcoShield AI frontend template
+    └── index.html             # TelcoShield AI dashboard template
 ```
 
 ---
@@ -560,7 +518,7 @@ telco-churn-ml/
    python app.py
    ```
 
-5. **Access the application:** Open `http://127.0.0.1:5000` in your web browser.
+5. **Open the application:** Navigate to `http://127.0.0.1:5000` in your browser.
 
 ---
 
@@ -571,48 +529,48 @@ telco-churn-ml/
    docker build --no-cache -t telco-churn-app .
    ```
 
-2. **Run the container with port forwarding:**
+2. **Run the container:**
    ```bash
    docker run -p 5000:5000 telco-churn-app
    ```
 
-3. **Access the application:** Open `http://localhost:5000` in your web browser.
+3. **Open the application:** Navigate to `http://localhost:5000` in your browser.
 
 ---
 
 ## 🧠 Key Engineering & ML Concepts
 
-### Data Engineering & Statistical Analysis
-- **Missing Value Forensics:** Identified zero-tenure root cause for whitespace strings in `TotalCharges`.
-- **Stratification:** Maintained class distribution fidelity ($73.5\% / 26.5\%$) across partitions.
-- **Correlation Boundaries:** Analyzed Pearson colinearities without making causal claims.
+### Data Analysis & Cleaning
+- **Zero-Tenure Imputation:** Addressed whitespace values in `TotalCharges` by identifying zero-tenure customer accounts.
+- **Stratified Partitioning:** Preserved target class ratios across train/test splits.
+- **Correlation Interpretation:** Evaluated linear associations while maintaining analytical boundaries regarding causality.
 
-### Machine Learning & Decision Theory
-- **Ensemble Variance Reduction:** Utilized 500-tree bagging to reduce individual tree overfitting.
-- **Threshold Tuning vs Accuracy:** Optimized threshold ($p = 0.33$) for high churn recall ($74.60\%$) based on retention economics.
-- **ROC-AUC Invariance:** Evaluated global ranking discrimination independent of decision cutoffs.
+### Machine Learning & Evaluation
+- **Ensemble Bagging:** Employed 500 trees with restricted depth to manage decision tree variance.
+- **Threshold Calibration:** Selected a `0.33` operating threshold based on recall prioritization.
+- **ROC-AUC Invariance:** Evaluated discrimination capability across all possible decision cutoffs.
 
-### Production Engineering & Deployment
-- **Unified Pipeline Serialization:** Prevented train-serve skew by packaging `ColumnTransformer` with `RandomForestClassifier`.
-- **API Defensive Programming:** Validated categorical sets, data types, and null inputs.
-- **Container Isolation:** Standardized system environment using pinned dependencies in `python:3.10-slim`.
+### Engineering & Serving
+- **Unified Pipeline Serialization:** Packaged preprocessing and model inference together to prevent training-serving skew.
+- **Defensive API Validation:** Implemented type, range, and category validation for incoming JSON payloads.
+- **Containerization:** Standardized runtime environment with pinned library versions.
 
 ---
 
 ## ⚠️ Project Limitations
 
-1. **Static Historical Data:** Model reflects stationary distributions from historical data; does not account for macro-economic shifts or external competitor pricing changes.
-2. **Tabular Scope:** Does not process real-time customer service call transcripts, chat logs, or unstructured support tickets.
-3. **Threshold Sensitivity:** The `0.33` operating cutoff is tied to specific retention campaign assumptions; shifting cost ratios requires recalibration.
+1. **Static Dataset:** Model reflects historical patterns in the training data and does not capture future market shifts or external price changes.
+2. **Tabular Scope:** Limited to structured customer account attributes without unstructured support ticket or call transcript data.
+3. **Threshold Context:** The `0.33` operating threshold is specific to this project's recall objective and would require re-evaluation under different operational priorities.
 
 ---
 
 ## 🔮 Future Enhancements
 
-- [ ] **SHAP Integration:** Implement local TreeSHAP explanations for feature contribution transparency per prediction.
-- [ ] **Data Drift Monitoring:** Incorporate Evidently AI or Prometheus metrics to monitor prediction distribution drift in production.
-- [ ] **Automated CI/CD Pipeline:** Implement GitHub Actions for automated unit testing, Docker image building, and container registry publishing.
-- [ ] **Cloud Deployment:** Deploy containerized service to AWS ECS / Google Cloud Run with autoscaling.
+- [ ] **Explainability Integration:** Incorporate TreeSHAP to provide individual feature contribution breakdowns for predictions.
+- [ ] **Model Monitoring:** Implement data drift and prediction distribution monitoring.
+- [ ] **Automated Testing:** Add automated unit tests for API routes, validation rules, and pipeline inference.
+- [ ] **CI/CD Integration:** Configure GitHub Actions for automated testing and container image building.
 
 ---
 
