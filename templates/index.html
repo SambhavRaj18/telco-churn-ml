@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telco Customer Churn Prediction • ML Analytics Dashboard</title>
+  
+  <!-- Fallback Self-Contained Styles & System Fonts -->
+  <style>
+    :root {
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      font-family: "Plus Jakarta Sans", var(--font-family);
+      margin: 0;
+      padding: 0;
+      background-color: #020617;
+      color: #f8fafc;
+    }
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glass-input {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+    .glass-input:focus {
+      background: rgba(30, 41, 59, 0.98);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.28);
+      outline: none;
+    }
+    .glass-input:disabled {
+      background: rgba(15, 23, 42, 0.6) !important;
+      border-color: rgba(255, 255, 255, 0.05) !important;
+      color: #64748b !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+    }
+    .glass-input.input-error {
+      border-color: #f87171 !important;
+      background: rgba(69, 10, 10, 0.25) !important;
+    }
+    .glass-input.input-error:focus {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+    }
+    
+    .radial-progress {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    
+    .pulse-danger {
+      box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.3);
+    }
+    .pulse-success {
+      box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.3);
+    }
+  </style>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="min-h-full flex flex-col font-sans bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
+  
+  <!-- Ambient background glow effects -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/3 -right-40 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Top Navbar / Header -->
+  <header class="sticky top-0 z-50 glass-card border-b border-slate-800/80 bg-slate-950/90">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
+          <i class="fa-solid fa-chart-line text-white text-lg" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-base sm:text-lg font-bold tracking-tight text-white">Telco Customer Churn</span>
+            <span class="px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold bg-brand-500/10 text-brand-300 border border-brand-500/20 rounded-full">ML Analytics</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Random Forest Production Inference & Risk Evaluation</p>
+        </div>
+      </div>
+
+      <!-- Actions & Preset Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- Preset Profiles Dropdown -->
+        <div class="relative inline-block text-left">
+          <button id="presetDropdownBtn" type="button" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <i class="fa-solid fa-wand-magic-sparkles text-brand-400" aria-hidden="true"></i>
+            <span>Sample Presets</span>
+            <i class="fa-solid fa-chevron-down text-[10px]" aria-hidden="true"></i>
+          </button>
+          
+          <div id="presetMenu" class="hidden absolute right-0 mt-2 w-72 rounded-xl glass-card border border-slate-700 shadow-2xl z-50 py-1.5 divide-y divide-slate-800 focus:outline-none" role="menu">
+            <div class="px-3.5 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Load Sample Customer</div>
+            
+            <button type="button" role="menuitem" onclick="loadSamplePreset('profile_a')" class="w-full text-left px-3.5 py-2.5 hover:bg-indigo-500/15 flex items-start gap-2.5 transition focus:bg-indigo-500/20 focus:outline-none">
+              <span class="p-1.5 rounded-md bg-indigo-500/20 text-indigo-400 mt-0.5"><i class="fa-solid fa-user text-xs" aria-hidden="true"></i></span>
+              <div>
+                <div class="text-xs font-semibold text-indigo-300">Sample Profile A</div>
+                <div class="text-[11px] text-slate-400">Month-to-month, Fiber optic, Electronic check</div>
+              </div>
+            </button>
+
+            <button type="button" role="menuitem" onclick="loadSamplePreset('profile_b')" class="w-full text-left px-3.5 py-2.5 hover:bg-indigo-500/15 flex items-start gap-2.5 transition focus:bg-indigo-500/20 focus:outline-none">
+              <span class="p-1.5 rounded-md bg-indigo-500/20 text-indigo-400 mt-0.5"><i class="fa-solid fa-user-check text-xs" aria-hidden="true"></i></span>
+              <div>
+                <div class="text-xs font-semibold text-indigo-300">Sample Profile B</div>
+                <div class="text-[11px] text-slate-400">Two year contract, DSL, Automatic card</div>
+              </div>
+            </button>
+
+            <button type="button" role="menuitem" onclick="loadSamplePreset('profile_c')" class="w-full text-left px-3.5 py-2.5 hover:bg-indigo-500/15 flex items-start gap-2.5 transition focus:bg-indigo-500/20 focus:outline-none">
+              <span class="p-1.5 rounded-md bg-indigo-500/20 text-indigo-400 mt-0.5"><i class="fa-solid fa-phone text-xs" aria-hidden="true"></i></span>
+              <div>
+                <div class="text-xs font-semibold text-indigo-300">Sample Profile C</div>
+                <div class="text-[11px] text-slate-400">No internet service, Multiple lines, 1 Year</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <button type="button" onclick="resetForm()" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 transition focus:ring-2 focus:ring-brand-500 focus:outline-none" title="Reset all input fields and results">
+          <i class="fa-solid fa-rotate-right mr-1.5" aria-hidden="true"></i> Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    
+    <!-- Top Global Alert (API & Submission Feedback) -->
+    <div id="globalAlert" class="hidden mb-6 p-4 rounded-xl border transition-all duration-200" role="alert" aria-live="assertive">
+      <div class="flex items-start gap-3">
+        <i id="globalAlertIcon" class="fa-solid fa-circle-exclamation text-base mt-0.5" aria-hidden="true"></i>
+        <div class="flex-1">
+          <h3 id="globalAlertTitle" class="text-xs font-bold uppercase tracking-wider">Alert</h3>
+          <p id="globalAlertMessage" class="text-xs mt-1 text-slate-300 leading-relaxed"></p>
+        </div>
+        <button type="button" onclick="hideGlobalAlert()" class="text-slate-400 hover:text-slate-200 text-xs p-1" aria-label="Dismiss alert">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid: Left Column Form, Right Column Prediction Results -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left Column: Input Form (7 Cols on desktop) -->
+      <div class="lg:col-span-7 flex flex-col gap-6">
+        <div class="glass-card rounded-2xl p-6 sm:p-7 shadow-xl">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-800 gap-2">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-brand-400" aria-hidden="true"></i>
+                Customer Feature Inputs
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">Provide all 19 model features for inference evaluation</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-semibold px-2.5 py-1 bg-slate-800/90 text-slate-300 rounded-md border border-slate-700">19 Features</span>
+              <span class="text-[11px] text-rose-400 font-medium">* Required</span>
+            </div>
+          </div>
+
+          <form id="churnForm" novalidate onsubmit="handleFormSubmit(event)" class="mt-6 space-y-6">
+            
+            <!-- Section 1: Demographics -->
+            <fieldset class="space-y-4">
+              <legend class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+                <span>1. Customer Demographics</span>
+              </legend>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Gender -->
+                <div>
+                  <label for="gender" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Gender <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="gender" name="gender" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                  </select>
+                  <p id="error-gender" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Senior Citizen -->
+                <div>
+                  <label for="SeniorCitizen" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Senior Citizen Status <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="SeniorCitizen" name="SeniorCitizen" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select senior status</option>
+                    <option value="0">0 (No - Under 65)</option>
+                    <option value="1">1 (Yes - Senior Citizen)</option>
+                  </select>
+                  <p id="error-SeniorCitizen" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Partner -->
+                <div>
+                  <label for="Partner" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Has Partner <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="Partner" name="Partner" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select partner status</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                  <p id="error-Partner" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Dependents -->
+                <div>
+                  <label for="Dependents" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Has Dependents <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="Dependents" name="Dependents" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select dependents status</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                  <p id="error-Dependents" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="h-px bg-slate-800/80" aria-hidden="true"></div>
+
+            <!-- Section 2: Phone & Network Services -->
+            <fieldset class="space-y-4">
+              <legend class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400">
+                <i class="fa-solid fa-network-wired" aria-hidden="true"></i>
+                <span>2. Phone & Connectivity Services</span>
+              </legend>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Phone Service (Parent) -->
+                <div>
+                  <label for="PhoneService" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Phone Service <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="PhoneService" name="PhoneService" required onchange="onPhoneServiceChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select phone service</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                  <p id="error-PhoneService" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Multiple Lines (Child of PhoneService) -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="MultipleLines" class="text-xs font-semibold text-slate-300">
+                      Multiple Lines <span class="text-rose-400" aria-hidden="true">*</span>
+                    </label>
+                    <span id="multipleLinesStatus" class="text-[10px] text-slate-400"></span>
+                  </div>
+                  <select id="MultipleLines" name="MultipleLines" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No phone service">No phone service</option>
+                  </select>
+                  <p id="error-MultipleLines" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Internet Service (Parent) -->
+                <div>
+                  <label for="InternetService" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Internet Service <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="InternetService" name="InternetService" required onchange="onInternetServiceChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select internet type</option>
+                    <option value="DSL">DSL</option>
+                    <option value="Fiber optic">Fiber optic</option>
+                    <option value="No">No</option>
+                  </select>
+                  <p id="error-InternetService" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="h-px bg-slate-800/80" aria-hidden="true"></div>
+
+            <!-- Section 3: Add-on Subscriptions & Security (Children of InternetService) -->
+            <fieldset class="space-y-4">
+              <div class="flex items-center justify-between">
+                <legend class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400">
+                  <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                  <span>3. Add-on Subscriptions & Security</span>
+                </legend>
+                <span id="internetAddonsNotice" class="text-[11px] text-slate-400 font-medium"></span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Online Security -->
+                <div>
+                  <label for="OnlineSecurity" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Online Security <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="OnlineSecurity" name="OnlineSecurity" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-OnlineSecurity" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Online Backup -->
+                <div>
+                  <label for="OnlineBackup" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Online Backup <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="OnlineBackup" name="OnlineBackup" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-OnlineBackup" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Device Protection -->
+                <div>
+                  <label for="DeviceProtection" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Device Protection <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="DeviceProtection" name="DeviceProtection" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-DeviceProtection" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Tech Support -->
+                <div>
+                  <label for="TechSupport" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Tech Support <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="TechSupport" name="TechSupport" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-TechSupport" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Streaming TV -->
+                <div>
+                  <label for="StreamingTV" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Streaming TV <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="StreamingTV" name="StreamingTV" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-StreamingTV" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Streaming Movies -->
+                <div>
+                  <label for="StreamingMovies" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Streaming Movies <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="StreamingMovies" name="StreamingMovies" required class="internet-child-field w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select option</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No internet service">No internet service</option>
+                  </select>
+                  <p id="error-StreamingMovies" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="h-px bg-slate-800/80" aria-hidden="true"></div>
+
+            <!-- Section 4: Contract, Billing & Numerical Inputs -->
+            <fieldset class="space-y-4">
+              <legend class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400">
+                <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+                <span>4. Contract, Billing & Charges</span>
+              </legend>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Contract -->
+                <div>
+                  <label for="Contract" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Contract Type <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="Contract" name="Contract" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select contract</option>
+                    <option value="Month-to-month">Month-to-month</option>
+                    <option value="One year">One year</option>
+                    <option value="Two year">Two year</option>
+                  </select>
+                  <p id="error-Contract" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Paperless Billing -->
+                <div>
+                  <label for="PaperlessBilling" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Paperless Billing <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="PaperlessBilling" name="PaperlessBilling" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select billing option</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                  <p id="error-PaperlessBilling" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                  <label for="PaymentMethod" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Payment Method <span class="text-rose-400" aria-hidden="true">*</span>
+                  </label>
+                  <select id="PaymentMethod" name="PaymentMethod" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
+                    <option value="" disabled selected>Select payment method</option>
+                    <option value="Electronic check">Electronic check</option>
+                    <option value="Mailed check">Mailed check</option>
+                    <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                    <option value="Credit card (automatic)">Credit card (automatic)</option>
+                  </select>
+                  <p id="error-PaymentMethod" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+              </div>
+
+              <!-- Numerical Inputs: Tenure, MonthlyCharges, TotalCharges -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <!-- Tenure -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="tenure" class="text-xs font-semibold text-slate-300">
+                      Tenure (Months) <span class="text-rose-400" aria-hidden="true">*</span>
+                    </label>
+                    <span class="text-[10px] text-slate-400">0 – 72 integer</span>
+                  </div>
+                  <input type="number" id="tenure" name="tenure" min="0" max="72" step="1" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100" placeholder="e.g. 12" />
+                  <p id="error-tenure" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Monthly Charges -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="MonthlyCharges" class="text-xs font-semibold text-slate-300">
+                      Monthly Charges ($) <span class="text-rose-400" aria-hidden="true">*</span>
+                    </label>
+                    <span class="text-[10px] text-slate-400">&ge; 0</span>
+                  </div>
+                  <input type="number" step="0.01" min="0" id="MonthlyCharges" name="MonthlyCharges" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100" placeholder="e.g. 64.85" />
+                  <p id="error-MonthlyCharges" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Total Charges -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="TotalCharges" class="text-xs font-semibold text-slate-300">
+                      Total Charges ($) <span class="text-rose-400" aria-hidden="true">*</span>
+                    </label>
+                    <span class="text-[10px] text-slate-400">&ge; 0</span>
+                  </div>
+                  <input type="number" step="0.01" min="0" id="TotalCharges" name="TotalCharges" required class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-100" placeholder="e.g. 778.20" />
+                  <p id="error-TotalCharges" class="hidden text-[11px] text-rose-400 mt-1"></p>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Submit Button Area -->
+            <div class="pt-2">
+              <button type="submit" id="predictBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition flex items-center justify-center gap-2.5 focus:ring-2 focus:ring-brand-400 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed">
+                <i id="submitSpinner" class="fa-solid fa-circle-notch animate-spin hidden" aria-hidden="true"></i>
+                <i id="submitIcon" class="fa-solid fa-bolt" aria-hidden="true"></i>
+                <span id="predictBtnText">Run Churn Risk Analysis</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Column: Analytics, Prediction Output & Model Specifications -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+        
+        <!-- Prediction Result Card -->
+        <div id="resultCard" class="glass-card rounded-2xl p-6 sm:p-7 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[440px]" aria-live="polite">
+          
+          <!-- State 1: Idle State Display -->
+          <div id="idleState" class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
+              <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-200">Awaiting Customer Input</h3>
+            <p class="text-xs text-slate-400 max-w-xs mt-1.5 leading-relaxed">
+              Fill out the 19 feature parameters or load a sample preset to evaluate churn risk with the Random Forest model.
+            </p>
+          </div>
+
+          <!-- State 2: Loading State Display -->
+          <div id="loadingState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <div class="w-14 h-14 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin mb-4" aria-hidden="true"></div>
+            <h3 class="text-sm font-bold text-slate-200">Analyzing customer data…</h3>
+            <p class="text-xs text-slate-400 mt-1">Transforming inputs and evaluating decision tree ensemble</p>
+          </div>
+
+          <!-- State 3: Prediction Result Display -->
+          <div id="predictionState" class="hidden flex flex-col h-full justify-between space-y-6">
+            <div>
+              <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Prediction Outcome</span>
+                  <span id="outdatedBadge" class="hidden px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full uppercase tracking-wider">Outdated</span>
+                </div>
+                <span id="timestampBadge" class="text-[11px] text-slate-500 font-mono">Just now</span>
+              </div>
+
+              <!-- Stale warning if user modifies form after prediction -->
+              <div id="staleWarning" class="hidden mt-4 p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-200 text-xs flex items-center gap-2" role="status">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400" aria-hidden="true"></i>
+                <span>Inputs changed — run prediction again to update results.</span>
+              </div>
+
+              <!-- Main Outcome & Circular Risk Gauge -->
+              <div id="resultContentWrapper" class="mt-6 flex flex-col items-center text-center transition-opacity duration-200">
+                
+                <div class="relative w-44 h-44 flex items-center justify-center" aria-label="Risk Gauge">
+                  <svg class="w-full h-full radial-progress" viewBox="0 0 100 100" aria-hidden="true">
+                    <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="8" class="text-slate-800/90 fill-none" />
+                    <circle id="gaugeCircle" cx="50" cy="50" r="42" stroke="currentColor" stroke-width="8" class="text-rose-500 fill-none transition-all duration-1000 ease-out" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" />
+                  </svg>
+                  <div class="absolute flex flex-col items-center justify-center">
+                    <span id="probPercentage" class="text-3xl font-extrabold text-white">0.00%</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">Churn Probability</span>
+                  </div>
+                </div>
+
+                <!-- Primary Outcome Badge -->
+                <div class="mt-4">
+                  <span id="churnBadge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                    <i id="churnIcon" class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <span id="churnText">Churn Risk Detected</span>
+                  </span>
+                </div>
+                
+                <!-- Probability & Threshold Interpretation -->
+                <div class="mt-4 text-xs text-slate-300 max-w-sm space-y-1.5 text-center">
+                  <p class="font-semibold text-slate-200">
+                    Estimated probability of churn according to the trained model.
+                  </p>
+                  <p class="text-[11px] text-slate-400 leading-relaxed">
+                    Threshold Rule: Probability &ge; 33% &rarr; Churn Risk Detected | &lt; 33% &rarr; No Churn Risk Detected
+                  </p>
+                  <p class="text-[10px] text-slate-400/90 italic pt-1 border-t border-slate-800/80">
+                    The probability represents the model's estimated churn risk. The 33% threshold is the operating threshold used by this project to convert probability into the displayed Churn/No Churn classification.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Technical Response (Collapsible) -->
+            <div class="pt-4 border-t border-slate-800">
+              <button type="button" onclick="toggleTechnicalResponse(event)" aria-expanded="false" class="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-200 py-1 focus:outline-none">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-code" aria-hidden="true"></i> Technical Details / API Payload</span>
+                <i id="techToggleIcon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" aria-hidden="true"></i>
+              </button>
+              <pre id="technicalResponsePre" class="hidden mt-2 p-3 rounded-xl bg-slate-900/95 border border-slate-800 text-[11px] font-mono text-emerald-400 overflow-x-auto select-all"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model Information Card (Technical Specifications) -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 text-xs text-slate-400 space-y-3">
+          <div class="flex items-center justify-between font-bold text-slate-200">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-brand-400" aria-hidden="true"></i>
+              <span>Model Information</span>
+            </span>
+            <span class="text-[10px] uppercase font-semibold text-brand-400/90 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Specification</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2.5 pt-1 text-[11px]">
+            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+              <span class="block text-slate-400 font-medium">Model Architecture</span>
+              <span class="text-slate-100 font-bold">Random Forest</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+              <span class="block text-slate-400 font-medium">Number of Trees</span>
+              <span class="text-slate-100 font-bold">500</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+              <span class="block text-slate-400 font-medium">Decision Threshold</span>
+              <span class="text-slate-100 font-bold">33% (0.33)</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
+              <span class="block text-slate-400 font-medium">Validation ROC-AUC</span>
+              <span class="text-slate-100 font-bold">0.8422</span>
+            </div>
+          </div>
+
+          <p class="text-[10px] text-slate-400 italic pt-1 leading-relaxed">
+            The probability represents the model's estimated churn risk. The 33% threshold is the operating threshold used by this project to convert probability into the displayed Churn/No Churn classification.
+          </p>
+        </div>
+
+        <!-- Project Disclaimer -->
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
+          <p>
+            <strong class="text-slate-300">Disclaimer:</strong> This is a machine-learning prediction for demonstration and decision-support purposes. It should not be treated as a guaranteed prediction of customer behavior.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>Telco Customer Churn Prediction System • Production Machine Learning Interface</p>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold" role="status" aria-live="polite">
+    <i id="toastIcon" class="fa-solid fa-check" aria-hidden="true"></i>
+    <span id="toastMsg">Notification</span>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    /* =========================================================================
+       1. DATA STRUCTURES & CONSTANTS
+       ========================================================================= */
+    const REQUIRED_FEATURE_NAMES = [
+      "gender", "SeniorCitizen", "Partner", "Dependents",
+      "tenure", "PhoneService", "MultipleLines", "InternetService",
+      "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+      "TechSupport", "StreamingTV", "StreamingMovies",
+      "Contract", "PaperlessBilling", "PaymentMethod",
+      "MonthlyCharges", "TotalCharges"
+    ];
+
+    const INTERNET_ADDON_IDS = [
+      "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+      "TechSupport", "StreamingTV", "StreamingMovies"
+    ];
+
+    // Presets with 100% valid schema and logical dependencies
+    const SAMPLE_PRESETS = {
+      profile_a: {
+        gender: "Female",
+        SeniorCitizen: "0",
+        Partner: "No",
+        Dependents: "No",
+        tenure: 2,
+        PhoneService: "Yes",
+        MultipleLines: "No",
+        InternetService: "Fiber optic",
+        OnlineSecurity: "No",
+        OnlineBackup: "No",
+        DeviceProtection: "No",
+        TechSupport: "No",
+        StreamingTV: "Yes",
+        StreamingMovies: "Yes",
+        Contract: "Month-to-month",
+        PaperlessBilling: "Yes",
+        PaymentMethod: "Electronic check",
+        MonthlyCharges: 89.85,
+        TotalCharges: 179.70
+      },
+      profile_b: {
+        gender: "Male",
+        SeniorCitizen: "0",
+        Partner: "Yes",
+        Dependents: "Yes",
+        tenure: 64,
+        PhoneService: "Yes",
+        MultipleLines: "Yes",
+        InternetService: "DSL",
+        OnlineSecurity: "Yes",
+        OnlineBackup: "Yes",
+        DeviceProtection: "Yes",
+        TechSupport: "Yes",
+        StreamingTV: "Yes",
+        StreamingMovies: "Yes",
+        Contract: "Two year",
+        PaperlessBilling: "No",
+        PaymentMethod: "Credit card (automatic)",
+        MonthlyCharges: 65.50,
+        TotalCharges: 4192.00
+      },
+      profile_c: {
+        gender: "Male",
+        SeniorCitizen: "0",
+        Partner: "No",
+        Dependents: "No",
+        tenure: 18,
+        PhoneService: "Yes",
+        MultipleLines: "Yes",
+        InternetService: "No",
+        OnlineSecurity: "No internet service",
+        OnlineBackup: "No internet service",
+        DeviceProtection: "No internet service",
+        TechSupport: "No internet service",
+        StreamingTV: "No internet service",
+        StreamingMovies: "No internet service",
+        Contract: "One year",
+        PaperlessBilling: "No",
+        PaymentMethod: "Mailed check",
+        MonthlyCharges: 25.35,
+        TotalCharges: 456.30
+      }
+    };
+
+    let isSubmitting = false;
+    let hasPredictedResult = false;
+
+    /* =========================================================================
+       2. INITIALIZATION & LISTENERS
+       ========================================================================= */
+    document.addEventListener("DOMContentLoaded", () => {
+      // Setup preset dropdown toggle
+      const presetBtn = document.getElementById("presetDropdownBtn");
+      const presetMenu = document.getElementById("presetMenu");
+
+      presetBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isHidden = presetMenu.classList.contains("hidden");
+        presetMenu.classList.toggle("hidden");
+        presetBtn.setAttribute("aria-expanded", isHidden ? "true" : "false");
+      });
+
+      document.addEventListener("click", () => {
+        presetMenu.classList.add("hidden");
+        presetBtn.setAttribute("aria-expanded", "false");
+      });
+
+      // Attach change listeners to every form input to flag stale predictions
+      const form = document.getElementById("churnForm");
+      const allInputs = form.querySelectorAll("input, select");
+      allInputs.forEach(input => {
+        input.addEventListener("input", onFormInputModified);
+        input.addEventListener("change", onFormInputModified);
+      });
+
+      // Apply initial dependency states on clean load
+      applyPhoneServiceDependency();
+      applyInternetServiceDependency();
+    });
+
+    function onFormInputModified() {
+      if (hasPredictedResult) {
+        document.getElementById("staleWarning").classList.remove("hidden");
+        document.getElementById("outdatedBadge").classList.remove("hidden");
+        const wrapper = document.getElementById("resultContentWrapper");
+        if (wrapper) wrapper.classList.add("opacity-70");
+      }
+    }
+
+    /* =========================================================================
+       3. LOGICAL DEPENDENCY CONTROLLERS
+       ========================================================================= */
+
+    /**
+     * PHONE SERVICE DEPENDENCY
+     * PhoneService = "No" => MultipleLines = "No phone service" & disabled.
+     * PhoneService = "Yes" => MultipleLines enabled with options "Yes" / "No".
+     */
+    function onPhoneServiceChange() {
+      applyPhoneServiceDependency();
+      clearFieldError("PhoneService");
+      clearFieldError("MultipleLines");
+    }
+
+    function applyPhoneServiceDependency() {
+      const phoneServiceVal = document.getElementById("PhoneService").value;
+      const multipleLinesSelect = document.getElementById("MultipleLines");
+      const statusBadge = document.getElementById("multipleLinesStatus");
+
+      if (phoneServiceVal === "No") {
+        multipleLinesSelect.innerHTML = '<option value="No phone service" selected>No phone service</option>';
+        multipleLinesSelect.value = "No phone service";
+        multipleLinesSelect.disabled = true;
+        if (statusBadge) statusBadge.textContent = "[Disabled - No Phone]";
+      } else if (phoneServiceVal === "Yes") {
+        const previousVal = multipleLinesSelect.value;
+        multipleLinesSelect.disabled = false;
+        multipleLinesSelect.innerHTML = `
+          <option value="" disabled>Select option</option>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        `;
+        if (previousVal === "Yes" || previousVal === "No") {
+          multipleLinesSelect.value = previousVal;
+        } else {
+          multipleLinesSelect.value = "No";
+        }
+        if (statusBadge) statusBadge.textContent = "";
+      } else {
+        multipleLinesSelect.disabled = false;
+        multipleLinesSelect.innerHTML = `
+          <option value="" disabled selected>Select option</option>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+          <option value="No phone service">No phone service</option>
+        `;
+        if (statusBadge) statusBadge.textContent = "";
+      }
+    }
+
+    /**
+     * INTERNET SERVICE DEPENDENCY
+     * InternetService = "No" => 6 child fields become "No internet service" & disabled.
+     * InternetService = "DSL" or "Fiber optic" => 6 child fields enabled with "Yes" / "No".
+     */
+    function onInternetServiceChange() {
+      applyInternetServiceDependency();
+      clearFieldError("InternetService");
+      INTERNET_ADDON_IDS.forEach(clearFieldError);
+    }
+
+    function applyInternetServiceDependency() {
+      const internetVal = document.getElementById("InternetService").value;
+      const noticeSpan = document.getElementById("internetAddonsNotice");
+
+      if (internetVal === "No") {
+        INTERNET_ADDON_IDS.forEach(id => {
+          const select = document.getElementById(id);
+          select.innerHTML = '<option value="No internet service" selected>No internet service</option>';
+          select.value = "No internet service";
+          select.disabled = true;
+        });
+        if (noticeSpan) noticeSpan.textContent = "[Disabled - No Internet]";
+      } else if (internetVal === "DSL" || internetVal === "Fiber optic") {
+        INTERNET_ADDON_IDS.forEach(id => {
+          const select = document.getElementById(id);
+          const previousVal = select.value;
+          select.disabled = false;
+          select.innerHTML = `
+            <option value="" disabled>Select option</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          `;
+          if (previousVal === "Yes" || previousVal === "No") {
+            select.value = previousVal;
+          } else {
+            select.value = "No";
+          }
+        });
+        if (noticeSpan) noticeSpan.textContent = "";
+      } else {
+        INTERNET_ADDON_IDS.forEach(id => {
+          const select = document.getElementById(id);
+          select.disabled = false;
+          select.innerHTML = `
+            <option value="" disabled selected>Select option</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+            <option value="No internet service">No internet service</option>
+          `;
+        });
+        if (noticeSpan) noticeSpan.textContent = "";
+      }
+    }
+
+    /* =========================================================================
+       4. FORM VALIDATION
+       ========================================================================= */
+    function clearValidationErrors() {
+      const errorParas = document.querySelectorAll("[id^='error-']");
+      errorParas.forEach(p => {
+        p.textContent = "";
+        p.classList.add("hidden");
+      });
+      const inputs = document.querySelectorAll(".glass-input");
+      inputs.forEach(input => input.classList.remove("input-error"));
+    }
+
+    function clearFieldError(fieldId) {
+      const input = document.getElementById(fieldId);
+      const errorPara = document.getElementById(`error-${fieldId}`);
+      if (input) input.classList.remove("input-error");
+      if (errorPara) {
+        errorPara.textContent = "";
+        errorPara.classList.add("hidden");
+      }
+    }
+
+    function setFieldError(fieldId, errorMsg) {
+      const input = document.getElementById(fieldId);
+      const errorPara = document.getElementById(`error-${fieldId}`);
+      if (input) input.classList.add("input-error");
+      if (errorPara) {
+        errorPara.textContent = errorMsg;
+        errorPara.classList.remove("hidden");
+      }
+    }
+
+    function validateFormData() {
+      clearValidationErrors();
+      let isValid = true;
+      const firstInvalidId = [];
+
+      // 1. Validate Dropdown Selections
+      const categoricalFields = [
+        "gender", "SeniorCitizen", "Partner", "Dependents",
+        "PhoneService", "MultipleLines", "InternetService",
+        "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+        "TechSupport", "StreamingTV", "StreamingMovies",
+        "Contract", "PaperlessBilling", "PaymentMethod"
+      ];
+
+      categoricalFields.forEach(id => {
+        const el = document.getElementById(id);
+        const val = el ? el.value : "";
+        if (!val || val === "") {
+          setFieldError(id, "Please select an option.");
+          isValid = false;
+          firstInvalidId.push(id);
+        }
+      });
+
+      // 2. Validate Dependency Consistency
+      const phoneServiceVal = document.getElementById("PhoneService").value;
+      const multipleLinesVal = document.getElementById("MultipleLines").value;
+      if (phoneServiceVal === "No" && multipleLinesVal !== "No phone service") {
+        setFieldError("MultipleLines", "Must be 'No phone service' when Phone Service is 'No'.");
+        isValid = false;
+        firstInvalidId.push("MultipleLines");
+      } else if (phoneServiceVal === "Yes" && multipleLinesVal === "No phone service") {
+        setFieldError("MultipleLines", "Cannot be 'No phone service' when Phone Service is 'Yes'.");
+        isValid = false;
+        firstInvalidId.push("MultipleLines");
+      }
+
+      const internetVal = document.getElementById("InternetService").value;
+      if (internetVal === "No") {
+        INTERNET_ADDON_IDS.forEach(id => {
+          if (document.getElementById(id).value !== "No internet service") {
+            setFieldError(id, "Must be 'No internet service' when Internet Service is 'No'.");
+            isValid = false;
+            firstInvalidId.push(id);
+          }
+        });
+      } else if (internetVal === "DSL" || internetVal === "Fiber optic") {
+        INTERNET_ADDON_IDS.forEach(id => {
+          if (document.getElementById(id).value === "No internet service") {
+            setFieldError(id, "Cannot be 'No internet service' when Internet is active.");
+            isValid = false;
+            firstInvalidId.push(id);
+          }
+        });
+      }
+
+      // 3. Strict Numeric Validation (Checking empty strings before parsing)
+      // Tenure
+      const tenureRaw = document.getElementById("tenure").value.trim();
+      if (tenureRaw === "") {
+        setFieldError("tenure", "Please enter customer tenure in months.");
+        isValid = false;
+        firstInvalidId.push("tenure");
+      } else {
+        const tenureNum = Number(tenureRaw);
+        if (isNaN(tenureNum) || !Number.isInteger(tenureNum)) {
+          setFieldError("tenure", "Tenure must be a whole number of months.");
+          isValid = false;
+          firstInvalidId.push("tenure");
+        } else if (tenureNum < 0 || tenureNum > 72) {
+          setFieldError("tenure", "Tenure must be between 0 and 72 months.");
+          isValid = false;
+          firstInvalidId.push("tenure");
+        }
+      }
+
+      // MonthlyCharges
+      const monthlyRaw = document.getElementById("MonthlyCharges").value.trim();
+      if (monthlyRaw === "") {
+        setFieldError("MonthlyCharges", "Please enter monthly charges.");
+        isValid = false;
+        firstInvalidId.push("MonthlyCharges");
+      } else {
+        const monthlyNum = Number(monthlyRaw);
+        if (isNaN(monthlyNum)) {
+          setFieldError("MonthlyCharges", "Monthly charges must be a valid number.");
+          isValid = false;
+          firstInvalidId.push("MonthlyCharges");
+        } else if (monthlyNum < 0) {
+          setFieldError("MonthlyCharges", "Monthly charges cannot be negative.");
+          isValid = false;
+          firstInvalidId.push("MonthlyCharges");
+        }
+      }
+
+      // TotalCharges
+      const totalRaw = document.getElementById("TotalCharges").value.trim();
+      if (totalRaw === "") {
+        setFieldError("TotalCharges", "Please enter total charges.");
+        isValid = false;
+        firstInvalidId.push("TotalCharges");
+      } else {
+        const totalNum = Number(totalRaw);
+        if (isNaN(totalNum)) {
+          setFieldError("TotalCharges", "Total charges must be a valid number.");
+          isValid = false;
+          firstInvalidId.push("TotalCharges");
+        } else if (totalNum < 0) {
+          setFieldError("TotalCharges", "Total charges cannot be negative.");
+          isValid = false;
+          firstInvalidId.push("TotalCharges");
+        }
+      }
+
+      if (!isValid && firstInvalidId.length > 0) {
+        const firstEl = document.getElementById(firstInvalidId[0]);
+        if (firstEl) firstEl.focus();
+      }
+
+      return isValid;
+    }
+
+    /* =========================================================================
+       5. FORM SUBMISSION & ROBUST API HANDLING
+       ========================================================================= */
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      if (isSubmitting) return;
+
+      hideGlobalAlert();
+
+      if (!validateFormData()) {
+        showGlobalAlert("Validation Error", "Please review and complete all required highlighted fields.", true);
+        return;
+      }
+
+      // Build the exact 19 feature JSON payload
+      const payload = {
+        gender: document.getElementById("gender").value,
+        SeniorCitizen: parseInt(document.getElementById("SeniorCitizen").value, 10),
+        Partner: document.getElementById("Partner").value,
+        Dependents: document.getElementById("Dependents").value,
+        tenure: parseInt(document.getElementById("tenure").value.trim(), 10),
+        PhoneService: document.getElementById("PhoneService").value,
+        MultipleLines: document.getElementById("MultipleLines").value,
+        InternetService: document.getElementById("InternetService").value,
+        OnlineSecurity: document.getElementById("OnlineSecurity").value,
+        OnlineBackup: document.getElementById("OnlineBackup").value,
+        DeviceProtection: document.getElementById("DeviceProtection").value,
+        TechSupport: document.getElementById("TechSupport").value,
+        StreamingTV: document.getElementById("StreamingTV").value,
+        StreamingMovies: document.getElementById("StreamingMovies").value,
+        Contract: document.getElementById("Contract").value,
+        PaperlessBilling: document.getElementById("PaperlessBilling").value,
+        PaymentMethod: document.getElementById("PaymentMethod").value,
+        MonthlyCharges: parseFloat(document.getElementById("MonthlyCharges").value.trim()),
+        TotalCharges: parseFloat(document.getElementById("TotalCharges").value.trim())
+      };
+
+      // Set Loading UI State
+      isSubmitting = true;
+      const idleState = document.getElementById("idleState");
+      const loadingState = document.getElementById("loadingState");
+      const predictionState = document.getElementById("predictionState");
+      const predictBtn = document.getElementById("predictBtn");
+      const submitSpinner = document.getElementById("submitSpinner");
+      const submitIcon = document.getElementById("submitIcon");
+      const predictBtnText = document.getElementById("predictBtnText");
+
+      idleState.classList.add("hidden");
+      predictionState.classList.add("hidden");
+      loadingState.classList.remove("hidden");
+      loadingState.classList.add("flex");
+
+      predictBtn.disabled = true;
+      submitSpinner.classList.remove("hidden");
+      submitIcon.classList.add("hidden");
+      predictBtnText.textContent = "Analyzing customer data…";
+
+      try {
+        let response;
+        try {
+          response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } catch (networkErr) {
+          console.error("Network communication error:", networkErr);
+          showGlobalAlert("Connection Error", "Prediction service unavailable. Make sure the Flask server is running.", true);
+          setTechnicalError({ error: "Network connection failed or server is unreachable." }, payload);
+          idleState.classList.remove("hidden");
+          loadingState.classList.add("hidden");
+          return;
+        }
+
+        // Parse response JSON safely
+        let result = null;
+        let isJsonValid = true;
+        try {
+          result = await response.json();
+        } catch (parseErr) {
+          isJsonValid = false;
+        }
+
+        if (response.status === 200) {
+          if (!isJsonValid || !result || typeof result !== "object") {
+            showGlobalAlert("Malformed Response (HTTP 200)", "The server returned HTTP 200 but the response was not valid JSON.", true);
+            setTechnicalError({ error: "Invalid JSON response payload on HTTP 200" }, payload);
+            idleState.classList.remove("hidden");
+            loadingState.classList.add("hidden");
+            return;
+          }
+
+          if (typeof result.churn_probability !== "number" || typeof result.prediction !== "string") {
+            showGlobalAlert("Malformed Schema (HTTP 200)", "Prediction response is missing expected 'churn_probability' or 'prediction' fields.", true);
+            setTechnicalError(result, payload);
+            idleState.classList.remove("hidden");
+            loadingState.classList.add("hidden");
+            return;
+          }
+
+          renderPredictionResult(result, payload);
+          showToast("Inference analysis complete", "success");
+
+        } else if (response.status === 400) {
+          const errMsg = (result && result.error) ? result.error : ((result && result.missing_features) ? `Missing features: ${result.missing_features.join(', ')}` : "Invalid input parameters submitted.");
+          showGlobalAlert("Input Validation Error (HTTP 400)", errMsg, true);
+          setTechnicalError(result || { status: 400, error: "HTTP 400 Bad Request" }, payload);
+          idleState.classList.remove("hidden");
+          loadingState.classList.add("hidden");
+
+        } else if (response.status === 500) {
+          showGlobalAlert("Server Error (HTTP 500)", "Prediction service encountered an error. Please try again.", true);
+          setTechnicalError(result || { status: 500, error: "HTTP 500 Internal Server Error" }, payload);
+          idleState.classList.remove("hidden");
+          loadingState.classList.add("hidden");
+
+        } else {
+          const errMsg = (result && result.error) ? result.error : `Server returned HTTP status ${response.status}.`;
+          showGlobalAlert(`Service Error (${response.status})`, errMsg, true);
+          setTechnicalError(result || { status: response.status, error: `HTTP ${response.status} Error` }, payload);
+          idleState.classList.remove("hidden");
+          loadingState.classList.add("hidden");
+        }
+
+      } catch (unexpectedErr) {
+        console.error("Unexpected processing error:", unexpectedErr);
+        showGlobalAlert("Application Error", "An unexpected error occurred while processing the response.", true);
+        setTechnicalError({ error: unexpectedErr.message }, payload);
+        idleState.classList.remove("hidden");
+        loadingState.classList.add("hidden");
+
+      } finally {
+        isSubmitting = false;
+        predictBtn.disabled = false;
+        submitSpinner.classList.add("hidden");
+        submitIcon.classList.remove("hidden");
+        predictBtnText.textContent = "Run Churn Risk Analysis";
+      }
+    }
+
+    /* =========================================================================
+       6. RESULT RENDERING & VISUALIZATION
+       ========================================================================= */
+    function renderPredictionResult(data, inputPayload) {
+      hasPredictedResult = true;
+
+      const idleState = document.getElementById("idleState");
+      const loadingState = document.getElementById("loadingState");
+      const predictionState = document.getElementById("predictionState");
+      const resultCard = document.getElementById("resultCard");
+      const staleWarning = document.getElementById("staleWarning");
+      const outdatedBadge = document.getElementById("outdatedBadge");
+      const resultContentWrapper = document.getElementById("resultContentWrapper");
+
+      loadingState.classList.add("hidden");
+      loadingState.classList.remove("flex");
+      idleState.classList.add("hidden");
+      predictionState.classList.remove("hidden");
+      staleWarning.classList.add("hidden");
+      outdatedBadge.classList.add("hidden");
+      if (resultContentWrapper) resultContentWrapper.classList.remove("opacity-70");
+
+      const prob = data.churn_probability;
+      const isChurn = data.prediction === "Churn";
+
+      // Formatted probability percentage: (probability * 100).toFixed(2)%
+      const probPct = (prob * 100).toFixed(2);
+      document.getElementById("probPercentage").textContent = `${probPct}%`;
+
+      // Timestamp
+      const now = new Date();
+      document.getElementById("timestampBadge").textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Animate circular SVG gauge (Circumference = 2 * PI * 42 ~= 263.89)
+      const circumference = 264;
+      const boundedProb = Math.min(Math.max(prob, 0), 1);
+      const offset = circumference - (circumference * boundedProb);
+      const gaugeCircle = document.getElementById("gaugeCircle");
+      gaugeCircle.style.strokeDashoffset = offset;
+
+      const churnBadge = document.getElementById("churnBadge");
+      const churnIcon = document.getElementById("churnIcon");
+      const churnText = document.getElementById("churnText");
+
+      resultCard.classList.remove("pulse-danger", "pulse-success");
+
+      if (isChurn) {
+        gaugeCircle.className.baseVal = "text-rose-500 fill-none transition-all duration-1000 ease-out";
+        churnBadge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-lg shadow-rose-500/20";
+        churnIcon.className = "fa-solid fa-triangle-exclamation text-rose-400";
+        churnText.textContent = "Churn Risk Detected";
+        resultCard.classList.add("pulse-danger");
+      } else {
+        gaugeCircle.className.baseVal = "text-emerald-400 fill-none transition-all duration-1000 ease-out";
+        churnBadge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-500/20";
+        churnIcon.className = "fa-solid fa-shield-check text-emerald-400";
+        churnText.textContent = "No Churn Risk Detected";
+        resultCard.classList.add("pulse-success");
+      }
+
+      // Populate Technical JSON
+      const technicalPayload = {
+        api_response: data,
+        submitted_19_features: inputPayload
+      };
+      document.getElementById("technicalResponsePre").textContent = JSON.stringify(technicalPayload, null, 2);
+    }
+
+    function setTechnicalError(errorData, inputPayload) {
+      document.getElementById("technicalResponsePre").textContent = JSON.stringify({
+        error_context: errorData,
+        submitted_payload: inputPayload
+      }, null, 2);
+    }
+
+    /* =========================================================================
+       7. PRESETS & RESET LOGIC
+       ========================================================================= */
+    function loadSamplePreset(presetKey) {
+      const data = SAMPLE_PRESETS[presetKey];
+      if (!data) return;
+
+      clearValidationErrors();
+      hideGlobalAlert();
+
+      // 1. Set Parent Fields first
+      document.getElementById("PhoneService").value = data.PhoneService;
+      applyPhoneServiceDependency();
+
+      document.getElementById("InternetService").value = data.InternetService;
+      applyInternetServiceDependency();
+
+      // 2. Set all remaining fields
+      Object.keys(data).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) {
+          el.value = data[key];
+        }
+      });
+
+      // Close preset menu
+      document.getElementById("presetMenu").classList.add("hidden");
+      document.getElementById("presetDropdownBtn").setAttribute("aria-expanded", "false");
+
+      showToast(`Loaded ${presetKey.replace('_', ' ').toUpperCase()}`, "info");
+    }
+
+    function resetForm() {
+      if (isSubmitting) return;
+
+      const form = document.getElementById("churnForm");
+      form.reset();
+
+      // Re-apply clean dependencies
+      applyPhoneServiceDependency();
+      applyInternetServiceDependency();
+
+      // Clear validation and alerts
+      clearValidationErrors();
+      hideGlobalAlert();
+
+      // Reset result card to idle
+      hasPredictedResult = false;
+      document.getElementById("idleState").classList.remove("hidden");
+      document.getElementById("loadingState").classList.add("hidden");
+      document.getElementById("predictionState").classList.add("hidden");
+      document.getElementById("staleWarning").classList.add("hidden");
+      document.getElementById("outdatedBadge").classList.add("hidden");
+
+      const resultContentWrapper = document.getElementById("resultContentWrapper");
+      if (resultContentWrapper) resultContentWrapper.classList.remove("opacity-70");
+
+      const resultCard = document.getElementById("resultCard");
+      resultCard.classList.remove("pulse-danger", "pulse-success");
+
+      // Reset gauge
+      const gaugeCircle = document.getElementById("gaugeCircle");
+      if (gaugeCircle) {
+        gaugeCircle.style.strokeDashoffset = "264";
+      }
+
+      // Reset technical JSON
+      const techPre = document.getElementById("technicalResponsePre");
+      techPre.textContent = "";
+      techPre.classList.add("hidden");
+      document.getElementById("techToggleIcon").classList.remove("rotate-180");
+
+      showToast("Form and prediction results reset", "info");
+    }
+
+    /* =========================================================================
+       8. UTILITY FUNCTIONS (Alerts, Toasts, Collapsible)
+       ========================================================================= */
+    function toggleTechnicalResponse(event) {
+      const pre = document.getElementById("technicalResponsePre");
+      const icon = document.getElementById("techToggleIcon");
+      const isHidden = pre.classList.contains("hidden");
+      pre.classList.toggle("hidden");
+      icon.classList.toggle("rotate-180");
+      if (event && event.currentTarget) {
+        event.currentTarget.setAttribute("aria-expanded", isHidden ? "true" : "false");
+      }
+    }
+
+    function showGlobalAlert(title, message, isError = true) {
+      const alert = document.getElementById("globalAlert");
+      const alertTitle = document.getElementById("globalAlertTitle");
+      const alertMsg = document.getElementById("globalAlertMessage");
+      const alertIcon = document.getElementById("globalAlertIcon");
+
+      alertTitle.textContent = title;
+      alertMsg.textContent = message;
+
+      if (isError) {
+        alert.className = "mb-6 p-4 rounded-xl border bg-rose-950/70 border-rose-800 text-rose-200";
+        alertIcon.className = "fa-solid fa-triangle-exclamation text-rose-400 text-base mt-0.5";
+      } else {
+        alert.className = "mb-6 p-4 rounded-xl border bg-amber-950/70 border-amber-800 text-amber-200";
+        alertIcon.className = "fa-solid fa-circle-info text-amber-400 text-base mt-0.5";
+      }
+
+      alert.classList.remove("hidden");
+      alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function hideGlobalAlert() {
+      document.getElementById("globalAlert").classList.add("hidden");
+    }
+
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      const toastIcon = document.getElementById("toastIcon");
+
+      toastMsg.textContent = msg;
+      toast.className = `fixed bottom-6 right-6 z-50 transform transition-all duration-300 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold ${
+        type === 'error' ? 'bg-rose-600 text-white' : (type === 'info' ? 'bg-slate-800 text-brand-300 border border-slate-700' : 'bg-emerald-600 text-white')
+      }`;
+
+      toastIcon.className = type === 'error' ? 'fa-solid fa-circle-exclamation' : (type === 'info' ? 'fa-solid fa-circle-info' : 'fa-solid fa-check');
+
+      toast.classList.remove("translate-y-20", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-20", "opacity-0");
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
